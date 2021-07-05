@@ -6,7 +6,11 @@ import matplotlib.pyplot as plt
 plt.style.use('fivethirtyeight')
 import seaborn as sns
 
-from pandas_datareader.data import DataReader
+import pandas_datareader.data as pdr
+import yfinance as yf
+yf.pdr_override()
+
+from datetime import datetime
 
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV
@@ -25,20 +29,7 @@ from sklearn.metrics import (roc_auc_score
 from sklearn.utils import resample
 from sklearn.model_selection import cross_val_score
 
-def stock_df(stock, start_date):
-    """
-    Inputs: stock, string of stock symbol
-            start_date, string of stock origination date in form 'MM/DD/YYYY'
-    Ouptus: {stock}_df, pandas dataframe of stock with pointer, for example: 
-            aapl dataframe would be aapl_df
-    """
-    stock_df = DataReader(stock
-                          , 'yahoo'
-                          , start = start_date
-                         )
-    
-    stock_df.to_pickle(f'./data/{stock}_df.pkl')
-    
+
 def data(stock, start_date, days_ahead):
     """
     Inputs: stock, string of stock symbol
@@ -46,12 +37,13 @@ def data(stock, start_date, days_ahead):
             days_ahead, int days prediction ahead, 1 for 1 day ahead, 2 for 2 days ahead, etc...
     Output: X_train, X_test, y_train, y_test for modeling
     """
-    
+  
     # download daily stock data from yahoo 
-    stock_df = DataReader(stock
-                          , 'yahoo'
-                          , start = start_date
-                         )
+    stock_df = pdr.get_data_yahoo(stock
+                                  , data_source = 'yahoo'
+                                  , start = datetime.strptime(start_date, '%m/%d/%Y')
+                                  , end = datetime.strptime(datetime.today().strftime('%m/%d/%Y'), '%m/%d/%Y') 
+                                 )
     
     # some open values are 0.0, set it same as close value
     stock_df['Open'] = where(stock_df['Open'] == 0.0, stock_df['Close'], stock_df['Open'])
